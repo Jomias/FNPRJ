@@ -10,7 +10,8 @@ position_type = [
     ("hash_key", uint64),
     ("state", uint8),
     ("repetitions", types.DictType(uint64, int64)),
-    ("fifty_moves_cnt", uint8)
+    ("half_move_clock", uint8),
+    ("full_move_count", uint8)
 ]
 
 move_type = [
@@ -49,6 +50,5 @@ ai_type = [
     ("time_limit", uint64),
     ("node_limit", uint64),
     ("start", uint64),
-
     ("stopped", b1),
 ]

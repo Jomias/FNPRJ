@@ -177,17 +177,18 @@ def apply_move(old_pos: Position, cur_move: Move):
     new_pos = Position()
     new_pos.pieces = np.copy(old_pos.pieces)
     new_pos.repetitions = old_pos.repetitions.copy()
-    new_pos.fifty_moves_cnt = old_pos.fifty_moves_cnt + 1
+    new_pos.half_move_clock = old_pos.half_move_clock + 1
     new_pos.side, new_pos.eps, new_pos.castle, new_pos.hash_key = old_pos.side, old_pos.eps, old_pos.castle, old_pos.hash_key
     opp = new_pos.side ^ 1
     side, piece, source, target, capture = int(cur_move.side), cur_move.piece, cur_move.source, cur_move.target, cur_move.capture
     promote_to, enpassant, double_push, castling = cur_move.promote_to, cur_move.enpassant, cur_move.double_push, cur_move.castling
     delta = 8 if new_pos.side == WHITE else -8
+    new_pos.full_move_count = old_pos.full_move_count + (1 if int(old_pos.side) == WHITE else 0)
     new_pos.pieces[side][piece] = pop_bit(new_pos.pieces[side][piece], source)
     new_pos.pieces[side][piece] = set_bit(new_pos.pieces[side][piece], target)
     new_pos.hash_key ^= piece_keys[side][piece][source] ^ piece_keys[side][piece][target]
     if capture:
-        new_pos.fifty_moves_cnt = 0
+        new_pos.half_move_clock = 0
         for p in range(PAWN, KING):
             if get_bit(new_pos.pieces[opp][p], target):
                 new_pos.pieces[opp][p] = pop_bit(new_pos.pieces[opp][p], target)
@@ -219,12 +220,12 @@ def apply_move(old_pos: Position, cur_move: Move):
     new_pos.side = opp
     new_pos.hash_key ^= side_key
     if piece == PAWN:
-        new_pos.fifty_moves_cnt = 0
+        new_pos.half_move_clock = 0
     if new_pos.hash_key in new_pos.repetitions:
         new_pos.repetitions[new_pos.hash_key] += 1
     else:
         new_pos.repetitions[new_pos.hash_key] = 1
-    if new_pos.repetitions[new_pos.hash_key] == 3 or new_pos.fifty_moves_cnt == 50:
+    if new_pos.repetitions[new_pos.hash_key] == 3 or new_pos.half_move_clock == 100:
         new_pos.state = DRAW
     return new_pos
 
@@ -251,6 +252,7 @@ def parse_move(pos, uci_move: str) -> Move:
                     if promoted_piece == p and uci_move[4] == s:
                         return move
             return move
+
 
 if __name__ == "__main__":
     abc = parse_fen(killer_position)

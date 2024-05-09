@@ -27,8 +27,16 @@ def parse_fen(cur_fen: str):
     for side in (("P", "N", "B", "R", "Q", "K"), ("p", "n", "b", "r", "q", "k")):
         for code, letter in enumerate(side):
             let_str_to_int[letter] = code
-    cur_board, color, castle, ep, _, _ = cur_fen.split()
+
+    try:
+        cur_board, color, castle, ep, half_move_clock, full_move_count = cur_fen.split()
+    except Exception:
+        cur_board, color, castle, ep = cur_fen.split()
+        half_move_clock, full_move_count = 0, 1
+
     cur_pos.side = WHITE if color == "w" else BLACK
+    cur_pos.half_move_clock = half_move_clock
+    cur_pos.full_move_count = full_move_count
 
     if ep == "-":
         cur_pos.eps = no_sq

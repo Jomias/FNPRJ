@@ -19,7 +19,8 @@ class Position:
         self.hash_key = uint64(0)
         self.state = NORMAL
         self.repetitions = typed.Dict.empty(key_type=uint64, value_type=int64)
-        self.fifty_moves_cnt = 0
+        self.half_move_clock = 0
+        self.full_move_count = 1
 
 
 # Load the arrays from files
