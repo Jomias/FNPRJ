@@ -1,6 +1,7 @@
 from position import Position, generate_hash_key
 from const import WHITE, BLACK, BOTH, no_sq, sq_to_fr
 from numba import njit, types, typed
+import numpy
 from bitboard_helper import set_bit
 
 empty_board = "8/8/8/8/8/8/8/8 w - - "
@@ -17,6 +18,37 @@ bnk_mate = "1k6/8/8/8/8/8/8/1K2BN2 w - - 0 1"
 stale_mate = "k7/8/1K1Q4/8/8/8/8/8 w - - 0 1"
 
 
+@njit
+def str2int(text):
+    c_min = ord("0")
+    c_max = ord("9")
+    n = len(text)
+    valid = n > 0
+    # determine sign
+    start = n - 1
+    stop = -1
+    sign = 1
+    if valid:
+        first = ord(text[0])
+        if first == ord("+"):
+            stop = 0
+        elif first == ord('-'):
+            sign = -1
+            stop = 0
+    # parse rest
+    number = 0
+    j = 0
+    for i in range(start, stop, -1):
+        c = ord(text[i])
+        if c_min <= c <= c_max:
+            number += (c - c_min) * 10 ** j
+            j += 1
+        else:
+            valid = False
+            break
+    return sign * number if valid else None
+
+
 @njit(Position.class_type.instance_type(types.string))
 def parse_fen(cur_fen: str):
     cur_pos = Position()
@@ -28,15 +60,10 @@ def parse_fen(cur_fen: str):
         for code, letter in enumerate(side):
             let_str_to_int[letter] = code
 
-    try:
-        cur_board, color, castle, ep, half_move_clock, full_move_count = cur_fen.split()
-    except Exception:
-        cur_board, color, castle, ep = cur_fen.split()
-        half_move_clock, full_move_count = 0, 1
-
+    cur_board, color, castle, ep, half_move_clock, full_move_count = cur_fen.split()
     cur_pos.side = WHITE if color == "w" else BLACK
-    cur_pos.half_move_clock = half_move_clock
-    cur_pos.full_move_count = full_move_count
+    cur_pos.half_move_clock = str2int(half_move_clock)
+    cur_pos.full_move_count = str2int(full_move_count)
 
     if ep == "-":
         cur_pos.eps = no_sq
@@ -69,3 +96,5 @@ def parse_fen(cur_fen: str):
     cur_pos.hash_key = generate_hash_key(cur_pos)
     cur_pos.repetitions[cur_pos.hash_key] = 1
     return cur_pos
+
+

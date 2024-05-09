@@ -1,4 +1,4 @@
-from numba import uint8, uint64, types, b1, from_dtype, int64, uint32
+from numba import uint8, uint64, types, b1, from_dtype, uint32, int64
 import numpy as np
 
 position_type = [
@@ -10,8 +10,8 @@ position_type = [
     ("hash_key", uint64),
     ("state", uint8),
     ("repetitions", types.DictType(uint64, int64)),
-    ("half_move_clock", uint8),
-    ("full_move_count", uint8)
+    ("half_move_clock", int64),
+    ("full_move_count", int64)
 ]
 
 move_type = [
