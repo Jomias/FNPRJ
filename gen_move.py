@@ -239,7 +239,7 @@ def make_null_move(old_pos: Position):
     return pos
 
 
-def parse_move(pos, uci_move: str) -> int:
+def parse_move(pos, uci_move: str) -> Move:
     source = (ord(uci_move[0]) - ord('a')) + ((8 - int(uci_move[1])) * 8)
     target = (ord(uci_move[2]) - ord('a')) + ((8 - int(uci_move[3])) * 8)
 
@@ -250,9 +250,7 @@ def parse_move(pos, uci_move: str) -> int:
                 for p, s in enumerate(('n', 'b', 'r', 'q'), 1):
                     if promoted_piece == p and uci_move[4] == s:
                         return move
-                return 0
             return move
-    return 0
 
 if __name__ == "__main__":
     abc = parse_fen(killer_position)

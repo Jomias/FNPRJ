@@ -72,7 +72,7 @@ def get_move_castling(move):
 @njit(cache=True)
 def get_move_uci(move):
     return str(sq_to_fr[move.source]) + str(sq_to_fr[move.target]) + \
-        (ascii_pieces[move.promote_to] if move.promote_to else '')
+        (ascii_pieces[5 + move.promote_to] if move.promote_to else '')
 
 
 move_spec = [

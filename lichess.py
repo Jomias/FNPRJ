@@ -8,9 +8,10 @@ from search import Stupid, search
 from move import get_move_uci, Move
 from bitboard_helper import count_bits
 from gen_move import apply_move, random_move, parse_move
+from const import BOTH
 
-API_TOKEN = open("api_token.txt").read()
-bot_id = 'black_numba'
+API_TOKEN = open("token.txt").read()
+bot_id = 'volcano101'
 
 session = berserk.TokenSession(API_TOKEN)
 client = berserk.Client(session=session)
@@ -46,7 +47,7 @@ class Lichess:
             move_list = self.moves.split()
             for smove in move_list:
                 self.pcb.push_uci(smove)
-                move = Move(parse_move(self.pos, smove))
+                move = parse_move(self.pos, smove)
                 self.pos = apply_move(self.pos, move)
             print(self.current_state)
             self.play(remaining_time=self.current_state['state'][self.time_str] // 1000)
@@ -60,7 +61,7 @@ class Lichess:
                     if not event['moves'] == self.moves:
                         s_move = event['moves'][len(self.moves):].strip()
                         self.moves = event['moves']
-                        self.pos = apply_move(self.pos, Move(parse_move(self.pos, s_move)))
+                        self.pos = apply_move(self.pos, parse_move(self.pos, s_move))
                         self.pcb.push_uci(s_move)
                         remaining_time = event[self.time_str].timestamp()
                         bot_turn = self.bot_is_white != self.pos.side
@@ -78,7 +79,7 @@ class Lichess:
 
     def play_random_fast(self):
         move = random_move(self.pos)
-        client.bots.apply_move(self.game_id, get_move_uci(move))
+        client.bots.make_move(self.game_id, get_move_uci(move))
 
     def ponder(self, remaining_time):
         # set time limit
@@ -106,7 +107,7 @@ class Lichess:
                 return
 
         # End-game table
-        elif count_bits(self.pos.pieces[2]) < 8:
+        elif count_bits(self.pos.occupancies[BOTH]) < 8:
             entry = self.syzygy()
             move = entry['uci']
             time_spent_ms = (time.perf_counter_ns() - start) / 10**6
@@ -120,12 +121,12 @@ class Lichess:
             time_limit = round(factor * target)
 
             # look for a move
-            depth, move, score = search(self.bot, self.pos, print_info=True, time_limit=time_limit)
-            move = get_move_uci(move)
+            search(self.bot, self.pos, print_info=True, time_limit=time_limit)
+            move = get_move_uci(Move(self.bot.pv_table[0][0]))
             time_spent_ms = (time.perf_counter_ns() - start) / 10**6
 
         try:
-            client.bots.apply_move(self.game_id, move)
+            client.bots.make_move(self.game_id, move)
         except berserk.exceptions.ResponseError as e:  # you flagged
             print(e)
             return
@@ -135,7 +136,7 @@ class Lichess:
         print("-" * 40)
 
     def look_in_da_book(self):
-        fruit = chess.polyglot.open_reader("book/book_small.bin")
+        fruit = chess.polyglot.open_reader("assets/Human.bin")
         if fruit.get(self.pcb):
             return fruit.weighted_choice(self.pcb)
 
@@ -145,8 +146,8 @@ class Lichess:
         return response['moves'][0]
 
 
-print("id name black_numba")
-print("id author Avo-k")
+print("id name volcano101")
+print("id jomias")
 print("compiling...")
 compiling_time = time.time()
 search(Stupid(), parse_fen(start_position), print_info=False, depth_limit=2)

@@ -49,5 +49,6 @@ ai_type = [
     ("time_limit", uint64),
     ("node_limit", uint64),
     ("start", uint64),
+
     ("stopped", b1),
 ]
