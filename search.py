@@ -4,19 +4,23 @@ from numba import njit
 from type import ai_type, hash_numpy_type
 import numpy as np
 from const import MAX_PLY, MAX_HASH_SIZE, LOWER_MATE, hash_flag_alpha, hash_flag_exact, hash_flag_beta, no_hash_entry, \
-    PAWN, DRAW, STALEMATE, full_depth_moves, reduction_limit, time_precision, BOUND_INF, UPPER_MATE
+    PAWN, DRAW, STALEMATE, full_depth_moves, reduction_limit, time_precision, BOUND_INF, UPPER_MATE, WHITE
 from position import Position
 from gen_move import apply_move, generate_legal_moves, make_null_move, is_king_in_check
 from bitboard_helper import get_bit
 from move import Move, get_move_uci
 from stored import MVV_LVA
 import time
+from train import predict_evaluation, load_model
 
+nn = load_model("adam_model_0.pth")
 
-@njit()
-def evaluate(pos):
-    return 1
-
+@njit(nb.int64(Position.class_type.instance_type))
+def evaluate(pos: Position):
+    with nb.objmode(val='int64'):
+        val = predict_evaluation(nn, pos.extract_bit_vector())
+        val = int(val * (100 if pos.side == WHITE else -100))
+        return val
 
 @jitclass(ai_type)
 class Stupid:
@@ -140,7 +144,6 @@ def quiescence_search(bot, pos, alpha, beta):
                 return beta
     return alpha
 
-
 @njit
 def negamax(bot: Stupid, pos: Position, alpha, beta, depth):
     if pos.state == DRAW or pos.state == STALEMATE:
@@ -226,10 +229,9 @@ def negamax(bot: Stupid, pos: Position, alpha, beta, depth):
     bot.write_hash_entry(pos, alpha, depth, hash_flag)
     return alpha
 
-
 @njit
-def search(bot, pos, print_info=False, depth_limit=32, time_limit=1000000, node_limit=10**9):
-    bot.reset_bot(time_limit=time_limit, node_limit=node_limit)
+def search(bot, pos, print_info=False, depth_limit=32, time_limit=100000, node_limit=10**9):
+    bot.reset_bot(time_limit, node_limit)
     depth, value = 0, 0
     alpha, beta = -BOUND_INF, BOUND_INF
     for depth in range(1, depth_limit + 1):

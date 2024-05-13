@@ -10,7 +10,7 @@ from bitboard_helper import count_bits
 from gen_move import apply_move, random_move, parse_move
 from const import BOTH
 
-API_TOKEN = open("token.txt").read()
+API_TOKEN = open("li_api/token.txt").read()
 bot_id = 'volcano101'
 
 session = berserk.TokenSession(API_TOKEN)

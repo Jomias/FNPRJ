@@ -22,6 +22,19 @@ class Position:
         self.half_move_clock = 0
         self.full_move_count = 1
 
+    def extract_bit_vector(self):
+        # Create a bit vector including side, eps, castle, half_move_clock, and full_move_count
+        bit_vector = np.concatenate((
+            self.pieces.ravel(),
+            np.array([self.side], dtype=np.uint8),
+            np.array([self.eps], dtype=np.uint8),
+            np.array([self.castle], dtype=np.uint8),
+            np.array([self.half_move_clock], dtype=np.int64),
+            np.array([self.full_move_count], dtype=np.int64)
+        ))
+        return bit_vector
+
+
 
 # Load the arrays from files
 piece_keys = np.load('pre_calculate/data/piece_keys.npy')
