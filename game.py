@@ -10,7 +10,7 @@ from const import (USER, WHITE, EASY, GAME_WIDTH, GAME_HEIGHT, DRAW, CHECKMATE, 
 from bitboard_helper import i_to_rc
 from gen_move import apply_move, random_move
 from move import Move
-from train import load_model
+from old_train import load_model
 
 
 def get_board_pos(pos):

@@ -11,7 +11,7 @@ from bitboard_helper import get_bit
 from move import Move, get_move_uci
 from stored import MVV_LVA
 import time
-from train import predict_evaluation, load_model
+from old_train import predict_evaluation, load_model
 
 nn = load_model("adam_model_0.pth")
 
