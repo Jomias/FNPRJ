@@ -23,3 +23,10 @@ val_df.to_csv('data/val.csv', index=False)
 test_df.to_csv('data/test.csv', index=False)
 
 
+# final_df = pd.concat([train_df, val_df], ignore_index=True)
+# final_df.to_csv('data/final_data.csv', index=False)
+final_df = pd.read_csv('data/final_data.csv')
+
+random_state = 42
+sample_df = final_df.sample(n=2400000, random_state=random_state)
+sample_df.to_csv('data/small_samples.csv', index=False)
