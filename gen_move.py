@@ -1,14 +1,47 @@
 import numba as nb
 import numpy as np
-from position import Position, side_key, piece_keys, en_passant_keys, castle_keys, print_board
-from move import Move, encode_move, print_move_list
+
+import const
+import fen
+from position import Position, side_key, piece_keys, en_passant_keys, castle_keys, print_vector
+from move import Move, encode_move
 from numba import njit, typed
-from bitboard_helper import get_bit, set_bit, pop_bit, lsb_index
-from get_attack import pawn_attacks, is_sq_attacked, get_attacks
+from bitboard_helper import get_bit, set_bit, pop_bit, lsb_index, i_to_rc
+from get_attack import pawn_attacks, is_sq_attacked, get_attacks, get_control_squares
 from const import WHITE, BLACK, BOTH, PAWN, KNIGHT, ROOK, KING, a1, a2, a7, a8, h1, h2, h7, h8, b1, c1, d1, e1, f1, g1, \
     b8, c8, d8, e8, f8, g8, EMPTY, BIT, wk, wq, bk, bq, no_sq, DRAW
 from stored import castling_rights
-from fen import parse_fen, killer_position
+from fen import parse_fen
+
+
+@njit
+def to_vector(pos: Position):
+    vt = np.zeros((29, 8, 8), np.uint8)
+    vt[0, :, :] = pos.side == 0
+    # castling
+    vt[25, :, :] = (pos.castle & wk) > 0 and pos.side == WHITE
+    vt[26, :, :] = (pos.castle & wq) > 0 and pos.side == WHITE
+    vt[27, :, :] = (pos.castle & bk) > 0 and pos.side == BLACK
+    vt[28, :, :] = (pos.castle & bq) > 0 and pos.side == BLACK
+
+    piece_to_layer = (6, 2, 3, 1, 4, 5, 7, 11, 10, 12, 9, 8)
+    # encode position
+    for i in range(2):
+        for j in range(6):
+            bb = pos.pieces[i][j]
+            attacks = 0
+            while bb:
+                src = lsb_index(bb)
+                r, c = i_to_rc(src)
+                vt[piece_to_layer[i * 6 + j], r, c] = 1
+                attacks |= get_control_squares(j, src, pos.occupancies[const.BOTH], i)
+                bb = pop_bit(bb, src)
+            while attacks:
+                src = lsb_index(attacks)
+                r, c = i_to_rc(src)
+                vt[piece_to_layer[i * 6 + j] + 12, r, c] = 1
+                attacks = pop_bit(attacks, src)
+    return vt
 
 
 def random_move(pos):
@@ -255,6 +288,5 @@ def parse_move(pos, uci_move: str) -> Move:
 
 
 if __name__ == "__main__":
-    abc = parse_fen(killer_position)
-    print_board(abc)
-    print_move_list(generate_legal_moves(abc, False))
+    a = parse_fen(fen.tricky_position)
+    print_vector(to_vector(a))

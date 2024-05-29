@@ -51,6 +51,23 @@ def get_attacks(piece, src, pos):
     return 0
 
 
+@njit(uint64(int64, uint8, uint64, int64))
+def get_control_squares(piece, src, bot_occ, side):
+    if piece == PAWN:
+        return pawn_attacks[side][src]
+    if piece == KNIGHT:
+        return knight_attacks[src]
+    if piece == BISHOP:
+        return get_bishop_attacks(src, bot_occ)
+    if piece == ROOK:
+        return get_rook_attacks(src, bot_occ)
+    if piece == QUEEN:
+        return get_queen_attacks(src, bot_occ)
+    if piece == KING:
+        return king_attacks[src]
+    return 0
+
+
 @njit(b1(Position.class_type.instance_type, uint8))
 def is_sq_attacked(cur_pos, sq):
     opp, pieces, occ = cur_pos.side ^ 1, cur_pos.pieces, cur_pos.occupancies

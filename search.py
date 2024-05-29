@@ -6,21 +6,63 @@ import numpy as np
 from const import MAX_PLY, MAX_HASH_SIZE, LOWER_MATE, hash_flag_alpha, hash_flag_exact, hash_flag_beta, no_hash_entry, \
     PAWN, DRAW, STALEMATE, full_depth_moves, reduction_limit, time_precision, BOUND_INF, UPPER_MATE, WHITE
 from position import Position
-from gen_move import apply_move, generate_legal_moves, make_null_move, is_king_in_check
+from gen_move import apply_move, generate_legal_moves, make_null_move, is_king_in_check, to_vector
 from bitboard_helper import get_bit
 from move import Move, get_move_uci
 from stored import MVV_LVA
+from evaluation import brute_force_evaluate
 import time
-from old_train import predict_evaluation, load_model
+import torch
+import torch.nn as nn
 
-nn = load_model("adam_model_0.pth")
+model = nn.Sequential(
+    nn.Conv2d(29, 128, kernel_size=3, padding=1),
+    nn.ReLU(),
+    nn.BatchNorm2d(128),
+    nn.Conv2d(128, 256, kernel_size=3, stride=1),
+    nn.ReLU(),
+    nn.BatchNorm2d(256),
+    nn.Dropout(0.4),
+    nn.Conv2d(256, 1024, kernel_size=2, stride=1),
+    nn.ReLU(),
+    nn.BatchNorm2d(1024),
+    nn.Dropout(0.4),
+    nn.Conv2d(1024, 512, kernel_size=2, stride=1),
+    nn.ReLU(),
+    nn.BatchNorm2d(512),
+    nn.Dropout(0.4),
+    nn.Conv2d(512, 256, kernel_size=3, stride=1),
+    nn.ReLU(),
+    nn.BatchNorm2d(256),
+    nn.Dropout(0.4),
+    nn.Flatten(),
+    nn.Linear(1024, 512),
+    nn.Dropout(0.2),
+    nn.Linear(512, 1)
+)
+
+model.load_state_dict(torch.load("train/best_model.pth", map_location=torch.device('cpu')))
+model.eval()
+
+
+def predict_evaluation(vector):
+    with torch.no_grad():
+        bit_vector_tensor = torch.from_numpy(np.array([vector], dtype=np.float32))
+        output = model(bit_vector_tensor)
+        return output.item()
+
 
 @njit(nb.int64(Position.class_type.instance_type))
 def evaluate(pos: Position):
+    vector = to_vector(pos)
     with nb.objmode(val='int64'):
-        val = predict_evaluation(nn, pos.extract_bit_vector())
-        val = int(val * (100 if pos.side == WHITE else -100))
+        predict = predict_evaluation(vector)
+        val = 3 * np.tan(predict) * 100
+        if pos.side != WHITE:
+            val = val * -1
+        val = max(min(7000, val), -7000)
         return val
+
 
 @jitclass(ai_type)
 class Stupid:
@@ -120,7 +162,7 @@ def quiescence_search(bot, pos, alpha, beta):
     bot.nodes += 1
     if pos.state == DRAW or pos.state == STALEMATE:
         return 0
-    evaluation = evaluate(pos)
+    evaluation = brute_force_evaluate(pos)
     if bot.ply > MAX_PLY - 1:  # limit it because search might take too long
         return evaluation
     if evaluation >= beta:
@@ -159,7 +201,7 @@ def negamax(bot: Stupid, pos: Position, alpha, beta, depth):
     if depth == 0:
         return quiescence_search(bot, pos, alpha, beta)
     if bot.ply > MAX_PLY - 1:
-        return evaluate(pos)
+        return brute_force_evaluate(pos)
     bot.nodes += 1
 
     in_check = is_king_in_check(pos)

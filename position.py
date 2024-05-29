@@ -3,9 +3,8 @@ from numba import uint64, int64, njit, typed
 from numba.experimental import jitclass
 from const import WHITE, BLACK, no_sq, NORMAL, sq_to_fr, ascii_pieces, wk, wq, bk, bq
 from type import position_type
-from bitboard_helper import lsb_index, pop_bit
+from bitboard_helper import lsb_index, pop_bit, get_bit
 from prettytable import PrettyTable, ALL
-from bitboard_helper import get_bit
 
 
 @jitclass(position_type)
@@ -21,19 +20,6 @@ class Position:
         self.repetitions = typed.Dict.empty(key_type=uint64, value_type=int64)
         self.half_move_clock = 0
         self.full_move_count = 1
-
-    def extract_bit_vector(self):
-        # Create a bit vector including side, eps, castle, half_move_clock, and full_move_count
-        bit_vector = np.concatenate((
-            self.pieces.ravel(),
-            np.array([self.side], dtype=np.uint8),
-            np.array([self.eps], dtype=np.uint8),
-            np.array([self.castle], dtype=np.uint8),
-            np.array([self.half_move_clock], dtype=np.int64),
-            np.array([self.full_move_count], dtype=np.int64)
-        ))
-        return bit_vector
-
 
 
 # Load the arrays from files
@@ -88,3 +74,11 @@ def print_board(cur_pos, details=True):
             f"{'k' if cur_pos.castle & bk else ''}{'q' if cur_pos.castle & bq else ''} "
         )
         print("Castling:", casl if casl else "-")
+
+
+def print_vector(vector):
+    np.set_printoptions(linewidth=150)
+    for i in range(vector.shape[0]):
+        print(f"Layer {i}:")
+        print(vector[i])
+        print("\n")

@@ -10,7 +10,6 @@ from const import (USER, WHITE, EASY, GAME_WIDTH, GAME_HEIGHT, DRAW, CHECKMATE, 
 from bitboard_helper import i_to_rc
 from gen_move import apply_move, random_move
 from move import Move
-from old_train import load_model
 
 
 def get_board_pos(pos):
@@ -21,7 +20,7 @@ class Controller:
     def __init__(self):
         self.game_board = DisplayBoard()
         self.ai = Stupid()
-        # search(self.ai, self.game_board.pos, time_limit=3000)
+        search(self.ai, self.game_board.pos, time_limit=3000)
         self.game_type = USER
         self.selected_square = None
         self.user_color = WHITE
@@ -134,7 +133,7 @@ class Controller:
                     if self.difficulty == MEDIUM:
                         search(self.ai, self.game_board.pos, print_info=True, node_limit=2000)
                     elif self.difficulty == HARD:
-                        search(self.ai, self.game_board.pos, print_info=True, depth_limit=7)
+                        search(self.ai, self.game_board.pos, print_info=True, node_limit=2000)
                     move = random_move(self.game_board.pos) if self.difficulty == EASY else Move(self.ai.pv_table[0][0])
                     self.game_board.pos = apply_move(self.game_board.pos, move)
                     self.game_board.last_move = (move.source, move.target)
